@@ -1,0 +1,183 @@
+# pyproject.toml - Modern Python dependency management with Poetry
+[tool.poetry]
+name = "sock-shop-automation"
+version = "1.0.0"
+description = "Enterprise-grade test automation framework using Python & Playwright"
+authors = ["Senior SDET <sdet@company.com>"]
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+# Core Python version requirement
+python = "^3.11"
+
+# Testing Framework Dependencies
+playwright = "^1.40.0"          # Modern browser automation
+pytest = "^7.4.0"              # Test runner with rich ecosystem
+pytest-playwright = "^0.4.3"    # Playwright integration for pytest
+pytest-xdist = "^3.5.0"        # Parallel test execution
+pytest-html = "^4.1.1"         # HTML test reports
+pytest-cov = "^4.1.0"          # Coverage reporting
+pytest-mock = "^3.12.0"        # Mocking utilities
+
+# Data & Configuration Management
+pydantic = "^2.5.0"            # Modern data validation with v2 features
+pydantic-settings = "^2.1.0"   # Settings management
+python-dotenv = "^1.0.0"       # Environment variables from .env
+
+# HTTP & API Testing
+httpx = "^0.25.0"              # Modern async HTTP client
+requests = "^2.31.0"           # Traditional HTTP client for compatibility
+
+# Data Generation & Manipulation
+faker = "^20.1.0"              # Fake data generation for tests
+factory-boy = "^3.3.0"         # Test data factories
+
+# Reporting & Monitoring
+allure-pytest = "^2.13.2"      # Rich test reporting with Allure
+structlog = "^23.2.0"          # Structured logging
+
+# Utilities & Helpers
+tenacity = "^8.2.3"            # Retry mechanisms with exponential backoff
+click = "^8.1.7"               # CLI interface for test utilities
+rich = "^13.7.0"               # Beautiful terminal output
+typer = "^0.9.0"               # Modern CLI framework
+
+[tool.poetry.group.dev.dependencies]
+# Code Quality & Formatting
+black = "^23.11.0"             # Code formatter
+isort = "^5.12.0"              # Import sorting
+flake8 = "^6.1.0"              # Style guide enforcement
+mypy = "^1.7.0"                # Static type checking
+bandit = "^1.7.5"              # Security linting
+
+# Pre-commit Hooks
+pre-commit = "^3.6.0"          # Git hooks for code quality
+
+# Development Tools
+pytest-testmon = "^2.1.1"      # Run only affected tests
+pytest-watch = "^4.2.0"        # Watch files and re-run tests
+ipython = "^8.17.0"            # Enhanced Python REPL
+
+[tool.poetry.group.performance.dependencies]
+# Performance Testing
+locust = "^2.17.0"             # Load testing framework
+memory-profiler = "^0.61.0"    # Memory usage profiling
+
+[build-system]
+# Modern Python build system
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# Tool Configurations
+[tool.black]
+# Code formatting configuration
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # Directories to exclude
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+# Import sorting configuration
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["src", "tests"]
+known_third_party = ["playwright", "pytest", "pydantic"]
+
+[tool.mypy]
+# Static type checking configuration
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+# Paths to type check
+[[tool.mypy.overrides]]
+module = [
+    "tests.*",
+]
+ignore_errors = true
+
+[tool.pytest.ini_options]
+# Pytest configuration
+minversion = "7.0"
+addopts = """
+    -ra
+    --strict-markers
+    --strict-config
+    --cov=src
+    --cov-branch
+    --cov-report=term-missing:skip-covered
+    --cov-report=html:reports/coverage
+    --cov-report=xml
+    --html=reports/pytest/report.html
+    --self-contained-html
+    --junitxml=reports/pytest/junit.xml
+"""
+
+# Test discovery
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Custom markers for test categorization
+markers = [
+    "smoke: Quick smoke tests",
+    "regression: Full regression suite",
+    "ui: User interface tests",
+    "api: API tests",
+    "e2e: End-to-end tests",
+    "performance: Performance tests",
+    "slow: Tests that take significant time",
+    "integration: Integration tests",
+    "unit: Unit tests",
+    "browser_chrome: Chrome browser tests",
+    "browser_firefox: Firefox browser tests",
+    "browser_safari: Safari browser tests"
+]
+
+[tool.coverage.run]
+# Coverage configuration
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/venv/*",
+    "*/virtualenv/*",
+    "*/.pytest_cache/*",
+    "*/conftest.py"
+]
+
+[tool.coverage.report]
+# Coverage reporting
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:"
+]
