@@ -214,6 +214,9 @@ class RetryStrategy(str, Enum):
     EXPONENTIAL = "exponential"
     """Exponential backoff - increasing delay between retries."""
 
+    EXPONENTIAL_JITTER = "exponential_jitter"
+    """Exponential backoff with random jitter to prevent thundering herd."""
+
     RANDOM = "random"
     """Random delay within a range."""
 

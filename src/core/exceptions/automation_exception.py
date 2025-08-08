@@ -18,21 +18,15 @@ SOLID Principles Applied:
 - LSP: All subclasses are substitutable
 - ISP: Clean interface with focused responsibilities
 - DIP: Depends on abstractions (enums, protocols)
-
-Interview Highlights:
-- Enterprise-level exception design with comprehensive context
-- Production-ready error tracking and debugging support
-- Recovery-oriented exception architecture
-- SOLID principles implementation in practice
 """
 
 import traceback
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Protocol, Union, Callable
+from typing import Any, Dict, List, Optional, Protocol
 from uuid import uuid4
 from abc import ABC, abstractmethod
 
-from ..enums import ErrorCategory, ErrorSeverity, LogLevel, RetryStrategy
+from .enums import ErrorCategory, ErrorSeverity, LogLevel, RetryStrategy
 
 
 class ErrorReporter(Protocol):
@@ -69,30 +63,6 @@ class AutomationException(Exception, ABC):
 
     All framework exceptions should inherit from this class to ensure
     consistent error handling and rich debugging information.
-
-    Attributes:
-        message: Human-readable error description
-        error_code: Unique error identifier for tracking
-        correlation_id: UUID for correlating related errors
-        category: Error category for classification
-        severity: Error severity level
-        retry_strategy: Suggested retry approach
-        context: Additional context information
-        recovery_suggestions: List of potential recovery actions
-        timestamp: When the error occurred
-        stack_trace: Captured stack trace
-        original_exception: Original exception that caused this error
-        event_listeners: List of error event listeners
-
-    Example:
-        >>> try:
-        ...     risky_operation()
-        ... except Exception as e:
-        ...     raise ConcreteAutomationException(
-        ...         message="Operation failed",
-        ...         original_exception=e
-        ...     ).add_context("operation", "user_login") \
-        ...      .add_recovery_suggestion("Check user credentials")
     """
 
     def __init__(
@@ -176,23 +146,16 @@ class AutomationException(Exception, ABC):
         """
         Generate a unique error code based on exception type and timestamp.
 
-        Error codes follow the pattern: EXCEPTION_TYPE_TIMESTAMP
-        This provides uniqueness while maintaining readability.
-
         Returns:
             str: Generated error code
         """
         class_name = self.__class__.__name__.replace("Exception", "").upper()
-        timestamp = self.timestamp.strftime("%Y%m%d_%H%M%S_%f")[:19]  # Include microseconds
+        timestamp = self.timestamp.strftime("%Y%m%d_%H%M%S_%f")[:19]
         return f"{class_name}_{timestamp}"
 
     def add_context(self, key: str, value: Any) -> "AutomationException":
         """
         Add contextual information to the exception.
-
-        This method supports method chaining for fluent error construction.
-        Context information is crucial for debugging and should include
-        relevant state at the time of the error.
 
         Args:
             key: Context key (e.g., "page_url", "element_selector")
@@ -200,11 +163,6 @@ class AutomationException(Exception, ABC):
 
         Returns:
             AutomationException: Self for method chaining
-
-        Example:
-            >>> exception = ConcreteException("Login failed") \
-            ...     .add_context("username", "test_user") \
-            ...     .add_context("page_url", "https://example.com/login")
         """
         self.context[key] = value
         return self
@@ -213,18 +171,11 @@ class AutomationException(Exception, ABC):
         """
         Add a recovery suggestion to help resolve the error.
 
-        Recovery suggestions should be actionable and specific to the error.
-        They help both automated recovery systems and human operators.
-
         Args:
             suggestion: Specific recovery action
 
         Returns:
             AutomationException: Self for method chaining
-
-        Example:
-            >>> exception.add_recovery_suggestion("Verify network connectivity") \
-            ...          .add_recovery_suggestion("Check API endpoint status")
         """
         if suggestion not in self.recovery_suggestions:
             self.recovery_suggestions.append(suggestion)
@@ -233,9 +184,6 @@ class AutomationException(Exception, ABC):
     def set_severity(self, severity: ErrorSeverity) -> "AutomationException":
         """
         Update the exception severity level.
-
-        This can be useful when the initial severity assessment changes
-        based on additional context or recovery attempts.
 
         Args:
             severity: New severity level
@@ -262,9 +210,6 @@ class AutomationException(Exception, ABC):
     def should_retry(self) -> bool:
         """
         Determine if this exception should trigger a retry attempt.
-
-        This decision is based on both the retry strategy and severity level.
-        Critical errors typically should not be retried automatically.
 
         Returns:
             bool: True if retry should be attempted
@@ -310,12 +255,6 @@ class AutomationException(Exception, ABC):
         """
         Add an event listener for this exception.
 
-        Event listeners can be used for:
-        - Custom logging
-        - Monitoring system integration
-        - Automated recovery actions
-        - Alerting and notifications
-
         Args:
             listener: Error reporter that implements ErrorReporter protocol
 
@@ -329,9 +268,6 @@ class AutomationException(Exception, ABC):
         """
         Add a recovery strategy for this exception.
 
-        Recovery strategies are used for automated error recovery.
-        Multiple strategies can be added and will be tried in order.
-
         Args:
             strategy: Recovery strategy that implements RecoveryStrategy protocol
 
@@ -344,9 +280,6 @@ class AutomationException(Exception, ABC):
     def notify_listeners(self) -> None:
         """
         Notify all registered event listeners about this exception.
-
-        This method is typically called when the exception is raised
-        or when significant state changes occur.
         """
         for listener in self._event_listeners:
             try:
@@ -358,9 +291,6 @@ class AutomationException(Exception, ABC):
     def attempt_recovery(self) -> bool:
         """
         Attempt automated recovery using registered strategies.
-
-        This method tries each recovery strategy in order until
-        one succeeds or all strategies are exhausted.
 
         Returns:
             bool: True if recovery was successful
@@ -379,12 +309,6 @@ class AutomationException(Exception, ABC):
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert exception to dictionary for serialization.
-
-        This format is suitable for:
-        - JSON logging and monitoring systems
-        - API error responses
-        - Database storage
-        - Message queue publishing
 
         Returns:
             Dict: Complete exception data
@@ -431,28 +355,9 @@ class AutomationException(Exception, ABC):
         import json
         return json.dumps(self.to_dict(), indent=2, default=str)
 
-    def get_debug_info(self) -> Dict[str, Any]:
-        """
-        Get comprehensive debug information for this exception.
-
-        Returns:
-            Dict: Debug information including context, suggestions, and metadata
-        """
-        return {
-            "exception_details": self.to_dict(),
-            "recovery_strategies_count": len(self._recovery_strategies),
-            "event_listeners_count": len(self._event_listeners),
-            "has_original_exception": self.original_exception is not None,
-            "context_keys": list(self.context.keys()),
-            "recovery_suggestions_count": len(self.recovery_suggestions)
-        }
-
     def __str__(self) -> str:
         """
         Return a comprehensive string representation for logging.
-
-        This format is optimized for human readability in logs
-        while still containing all essential debugging information.
 
         Returns:
             str: Formatted exception description
@@ -489,48 +394,25 @@ class AutomationException(Exception, ABC):
             f"message='{self.message}', "
             f"category={self.category.value}, "
             f"severity={self.severity.value}, "
-            f"error_code='{self.error_code}', "
-            f"should_retry={self.should_retry()}"
+            f"error_code='{self.error_code}'"
             f")"
         )
-
-    def __eq__(self, other) -> bool:
-        """Compare exceptions by error code and type."""
-        if not isinstance(other, AutomationException):
-            return False
-        return (
-                self.error_code == other.error_code and
-                self.__class__ == other.__class__
-        )
-
-    def __hash__(self) -> int:
-        """Hash exception by error code."""
-        return hash(self.error_code)
 
 
 class ExceptionBuilder:
     """
     Builder class for constructing complex exceptions with fluent API.
 
-    This builder implements the Builder pattern to make exception
-    construction more readable and maintainable.
-
     Example:
         >>> exception = ExceptionBuilder(ConcreteException) \
         ...     .with_message("Operation failed") \
         ...     .with_severity(ErrorSeverity.HIGH) \
         ...     .add_context("operation", "login") \
-        ...     .add_recovery_suggestion("Check credentials") \
         ...     .build()
     """
 
     def __init__(self, exception_class: type):
-        """
-        Initialize exception builder.
-
-        Args:
-            exception_class: Exception class to build
-        """
+        """Initialize exception builder."""
         self.exception_class = exception_class
         self.message = ""
         self.error_code = None
@@ -548,29 +430,9 @@ class ExceptionBuilder:
         self.message = message
         return self
 
-    def with_error_code(self, error_code: str) -> "ExceptionBuilder":
-        """Set error code."""
-        self.error_code = error_code
-        return self
-
-    def with_correlation_id(self, correlation_id: str) -> "ExceptionBuilder":
-        """Set correlation ID."""
-        self.correlation_id = correlation_id
-        return self
-
-    def with_category(self, category: ErrorCategory) -> "ExceptionBuilder":
-        """Set error category."""
-        self.category = category
-        return self
-
     def with_severity(self, severity: ErrorSeverity) -> "ExceptionBuilder":
         """Set error severity."""
         self.severity = severity
-        return self
-
-    def with_retry_strategy(self, strategy: RetryStrategy) -> "ExceptionBuilder":
-        """Set retry strategy."""
-        self.retry_strategy = strategy
         return self
 
     def add_context(self, key: str, value: Any) -> "ExceptionBuilder":
@@ -586,11 +448,6 @@ class ExceptionBuilder:
     def with_original_exception(self, exception: Exception) -> "ExceptionBuilder":
         """Set original exception."""
         self.original_exception = exception
-        return self
-
-    def with_log_level(self, level: LogLevel) -> "ExceptionBuilder":
-        """Set log level."""
-        self.log_level = level
         return self
 
     def build(self) -> AutomationException:
